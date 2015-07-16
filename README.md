@@ -1,6 +1,6 @@
 # CloudstackCloner
 
-TODO: Write a gem description
+Automated CloudStack VM cloning and copying and attaching of existing data disks.
 
 ## Installation
 

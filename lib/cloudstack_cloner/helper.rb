@@ -41,13 +41,14 @@ module CloudstackCloner
       ).first
         say "Template #{templ_name} already exists.", :green
       else
-        say "Template from volume #{volume["name"]} ", :yellow
+        say "Create template from volume #{volume["name"]} ", :yellow
         template = client.create_template(
           name: templ_name,
           displaytext: templ_name,
           ostypeid: vm["guestosid"],
           volumeid: volume["id"]
         )["template"]
+        say " [OK]", :green
       end
 
       say "Creating VM from template #{template["name"]} ", :yellow
@@ -60,12 +61,14 @@ module CloudstackCloner
         zoneid: vm["zoneid"],
         projectid: opts[:project_id]
       )["virtualmachine"]
+      say " [OK]", :green
 
 
       data_volumes.each do |volume|
         say "Creating snapshot for volume #{volume["name"]} ", :yellow
         snapshot = client.create_snapshot(volumeid: volume["id"])["snapshot"]
         say " [OK]", :green
+
         say "Creating clone of volume #{volume["name"]} ", :yellow
         volume = client.create_volume(
           name: "#{volume["name"]}_#{opts[:clone_name]}",
@@ -73,7 +76,8 @@ module CloudstackCloner
           projectid: opts[:project_id]
         )["volume"]
         say " [OK]", :green
-        say "Attach clone of volume #{volume["name"]} to VM #{clone["name"]}", :yellow
+
+        say "Attach clone of volume #{volume["name"]} to VM #{clone["name"]} ", :yellow
         client.attach_volume(
           id: volume["id"],
           virtualmachineid: clone["id"]
