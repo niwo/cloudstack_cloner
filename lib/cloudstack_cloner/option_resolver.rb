@@ -1,81 +1,67 @@
 module CloudstackCloner
   module OptionResolver
 
-    def vm_options_to_params(options = options)
-      resolve_zone(options)
-      resolve_project(options)
-      resolve_compute_offering(options)
-      resolve_template(options)
-      resolve_disk_offering(options)
-      resolve_iso(options)
-      unless options[:template_id]
-        say "Error: Template or ISO is required.", :red
-        exit 1
-      end
-      resolve_networks(options)
-    end
-
-    def resolve_zone(options = options)
-      if options[:zone]
+    def resolve_zone(opts)
+      if opts[:zone]
         zones = client.list_zones
-        zone = zones.find {|z| z['name'] == options[:zone] }
+        zone = zones.find {|z| z['name'] == opts[:zone] }
         if !zone
-          msg = options[:zone] ? "Zone '#{options[:zone]}' is invalid." : "No zone found."
+          msg = opts[:zone] ? "Zone '#{opts[:zone]}' is invalid." : "No zone found."
           say "Error: #{msg}", :red
           exit 1
         end
-        options[:zone_id] = zone['id']
+        opts[:zone_id] = zone['id']
       end
-      options
+      opts
     end
 
-    def resolve_domain(options = options)
-      if options[:domain]
-        if domain = client.list_domains(name: options[:domain]).first
-          options[:domain_id] = domain['id']
+    def resolve_domain(opts)
+      if opts[:domain]
+        if domain = client.list_domains(name: opts[:domain]).first
+          opts[:domain_id] = domain['id']
         else
-          say "Error: Domain #{options[:domain]} not found.", :red
+          say "Error: Domain #{opts[:domain]} not found.", :red
           exit 1
         end
       end
-      options
+      opts
     end
 
-    def resolve_project(options = options)
-      if options[:project]
-        if %w(ALL -1).include? options[:project]
-          options[:project_id] = "-1"
-        elsif project = client.list_projects(name: options[:project], listall: true).first
-          options[:project_id] = project['id']
+    def resolve_project(opts)
+      if opts[:project]
+        if %w(ALL -1).include? opts[:project]
+          opts[:project_id] = "-1"
+        elsif project = client.list_projects(name: opts[:project], listall: true).first
+          opts[:project_id] = project['id']
         else
-          say "Error: Project #{options[:project]} not found.", :red
+          say "Error: Project #{opts[:project]} not found.", :red
           exit 1
         end
       end
-      options
+      opts
     end
 
-    def resolve_account(options = options)
-      if options[:account]
-        if account = client.list_accounts(name: options[:account], listall: true).first
-          options[:account_id] = account['id']
-          options[:domain_id] = account['domainid']
+    def resolve_account(opts)
+      if opts[:account]
+        if account = client.list_accounts(name: opts[:account], listall: true).first
+          opts[:account_id] = account['id']
+          opts[:domain_id] = account['domainid']
         else
-          say "Error: Account #{options[:account]} not found.", :red
+          say "Error: Account #{opts[:account]} not found.", :red
           exit 1
         end
       end
-      options
+      opts
     end
 
-    def resolve_networks(options = options)
+    def resolve_networks(opts)
       networks = []
       available_networks = network = client.list_networks(
-        zone_id: options[:zone_id],
-        project_id: options[:project_id]
+        zone_id: opts[:zone_id],
+        project_id: opts[:project_id]
       )
-      if options[:networks]
-        options[:networks].each do |name|
+      if opts[:networks]
+        opts[:networks].each do |name|
           unless network = available_networks.find { |n| n['name'] == name }
             say "Error: Network '#{name}' not found.", :red
             exit 1
@@ -85,100 +71,81 @@ module CloudstackCloner
       end
       networks.compact!
       if networks.empty?
-        #unless default_network = client.list_networks(project_id: options[:project_id]).find {
+        #unless default_network = client.list_networks(project_id: opts[:project_id]).find {
         #  |n| n['isdefault'] == true }
-        unless default_network = client.list_networks(project_id: options[:project_id]).first
+        unless default_network = client.list_networks(project_id: opts[:project_id]).first
           say "Error: No default network found.", :red
           exit 1
         end
         networks << available_networks.first['id'] rescue nil
       end
-      options[:network_ids] = networks.join(',')
-      options
+      opts[:network_ids] = networks.join(',')
+      opts
     end
 
-    def resolve_iso(options = options)
-      if options[:iso]
-        unless iso = client.list_isos(
-            name: options[:iso],
-            project_id: options[:project_id]
-          ).first
-          say "Error: Iso '#{options[:iso]}' is invalid.", :red
-          exit 1
-        end
-        unless options[:diskoffering_id]
-          say "Error: a disk offering is required when using iso.", :red
-          exit 1
-        end
-        options[:template_id] = iso['id']
-        options['hypervisor'] = (options[:hypervisor] || 'vmware')
-      end
-      options
-    end
-
-    def resolve_template(options = options)
-      if options[:template]
+    def resolve_template(opts)
+      if opts[:template]
         if template = client.list_templates(
-            name: options[:template],
+            name: opts[:template],
             template_filter: "executable",
-            project_id: options[:project_id]
+            project_id: opts[:project_id]
           ).first
-          options[:template_id] = template['id']
+          opts[:template_id] = template['id']
         else
-          say "Error: Template #{options[:template]} not found.", :red
+          say "Error: Template #{opts[:template]} not found.", :red
           exit 1
         end
       end
-      options
+      opts
     end
 
-    def resolve_compute_offering(options = options)
-      if options[:offering]
-        if offering = client.list_service_offerings(name: options[:offering]).first
-          options[:service_offering_id] = offering['id']
+    def resolve_compute_offering(opts)
+      if opts[:offering]
+        if offering = client.list_service_offerings(name: opts[:offering]).first
+          opts[:service_offering_id] = offering['id']
         else
-          say "Error: Offering #{options[:offering]} not found.", :red
+          say "Error: Offering #{opts[:offering]} not found.", :red
           exit 1
         end
       end
-      options
+      opts
     end
 
-    def resolve_disk_offering(options = options)
-      if options[:disk_offering]
-        unless disk_offering = client.list_disk_offerings(name: options[:disk_offering]).first
-          say "Error: Disk offering '#{options[:disk_offering]}' not found.", :red
+    def resolve_disk_offering(opts)
+      if opts[:disk_offering]
+        unless disk_offering = client.list_disk_offerings(name: opts[:disk_offering]).first
+          say "Error: Disk offering '#{opts[:disk_offering]}' not found.", :red
           exit 1
         end
-        options[:disk_offering_id] = disk_offering['id']
+        opts[:disk_offering_id] = disk_offering['id']
       end
-      options
+      opts
     end
 
-    def resolve_virtual_machine(options = options.dup)
-      if options[:virtual_machine]
-        args = { name: options[:virtual_machine], listall: true }
-        args[:project_id] = options[:project_id]
+    def resolve_virtual_machine(opts)
+      if opts[:virtual_machine]
+        args = { name: opts[:virtual_machine], listall: true }
+        args[:project_id] = opts[:project_id]
         unless vm = client.list_virtual_machines(args).first
-          say "Error: VM '#{options[:virtual_machine]}' not found.", :red
+          say "Error: VM '#{opts[:virtual_machine]}' not found.", :red
           exit 1
         end
-        options[:virtual_machine_id] = vm['id']
+        opts[:virtual_machine_id] = vm['id']
       end
-      options
+      opts
     end
 
-    def resolve_snapshot(options = options)
-      if options[:snapshot]
-        args = { name: options[:snapshot], listall: true }
-        args[:project_id] = options[:project_id]
+    def resolve_snapshot(opts)
+      if opts[:snapshot]
+        args = { name: opts[:snapshot], listall: true }
+        args[:project_id] = opts[:project_id]
         unless snapshot = client.list_snapshots(args).first
-          say "Error: Snapshot '#{options[:snapshot]}' not found.", :red
+          say "Error: Snapshot '#{opts[:snapshot]}' not found.", :red
           exit 1
         end
-        options[:snapshot_id] = snapshot['id']
+        opts[:snapshot_id] = snapshot['id']
       end
-      options
+      opts
     end
 
   end

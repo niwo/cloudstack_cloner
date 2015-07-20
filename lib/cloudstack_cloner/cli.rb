@@ -24,21 +24,20 @@ module CloudstackCloner
 
     desc "clone", "Clone a virtual machine"
     option :virtual_machine,
-      desc: "name of the vm to clone",
+      desc: "Name of the vm to clone",
       required: true
     option :project,
-      desc: "name of project"
+      desc: "Name of project"
     option :clone_name,
-      desc: "name of the new vm",
+      desc: "Name of the new vm",
       required: true
     option :offering,
-      desc: "name of the compute offering for the new vm"
+      desc: "Name of the compute offering for the new vm"
     option :data_volumes,
-      desc: "names of data volumes to attach",
+      desc: "Names of data volumes to attach, separated by space",
       type: :array
     def clone
-      opts = options.dup
-      opts = resolve_project(opts)
+      opts = resolve_project(options.dup)
       opts = resolve_virtual_machine(opts)
       opts = resolve_compute_offering(opts)
       clone_vm(opts)

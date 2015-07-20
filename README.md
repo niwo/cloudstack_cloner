@@ -1,30 +1,32 @@
 # CloudstackCloner
 
-Automated CloudStack VM cloning and copying and attaching of existing data disks.
+[![Gem Version](https://badge.fury.io/rb/cloudstack_cloner.png)](http://badge.fury.io/rb/cloudstack_cloner)
+
+Automated CloudStack VM cloning and copying/attaching of existing data disks.
+CloudstackCloner uses [cloudstack_client](https://github.com/niwo/cloudstack_client) for CloudStack API communication.
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Install the Gem:
 
-```ruby
-gem 'cloudstack_cloner'
+```bash
+$ gem install cloudstack_cloner
 ```
 
-And then execute:
+## Configuration
 
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install cloudstack_cloner
+A [cloudstack-cli](https://github.com/niwo/cloudstack-cli) style configuration file is used for setting up URL, keys and secrets of your CloudStack API connection.
 
 ## Usage
 
+### Preconditions
+  * The machine to be cloned has to be in "Stopped" state.
+  * The data disks to be copied have to be in state "Ready".
 
 ### Example
 
 ```bash
-cloudstack_cloner clone --virtual_machine test01 --clone-name test-clone --project Playground --data-volumes test -e prod --offering 2cpu_2gb
+$ cloudstack_cloner clone --virtual_machine test01 --clone-name test-clone --project Playground --data-volumes test-volume --offering 2cpu_2gb
 ```
 
 ## Contributing
