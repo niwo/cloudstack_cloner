@@ -23,18 +23,22 @@ module CloudstackCloner
         exit 1
       end
 
-      data_volumes = opts[:data_volumes].map do |disk|
-        unless volume = client.list_volumes(
-          name: disk,
-          listall: true,
-          type: "DATADISK",
-          project_id: opts[:project_id]
-        ).first
-          say_log "Failure: ", :red
-          say "Volume #{disk} not found."
-          exit 1
+      data_volumes = if opts[:data_volumes]
+        opts[:data_volumes].map do |disk|
+          unless volume = client.list_volumes(
+            name: disk,
+            listall: true,
+            type: "DATADISK",
+            project_id: opts[:project_id]
+          ).first
+            say_log "Failure: ", :red
+            say "Volume #{disk} not found."
+            exit 1
+          end
+          volume
         end
-        volume
+      else
+        []
       end
 
       volume = client.list_volumes(opts.merge(listall: true, type: "root")).first
@@ -106,41 +110,13 @@ module CloudstackCloner
     end
 
     def client
-      @config ||= load_configuration(options[:config_file], options[:env]).first
+      @config ||= CloudstackClient::Configuration.load(options)
       @client ||= CloudstackClient::Client.new(
         @config[:url],
         @config[:api_key],
         @config[:secret_key],
         options
       )
-    end
-
-    def load_configuration(config_file, env)
-      unless File.exists?(config_file)
-        puts "Configuration file #{config_file} not found."
-        puts "Please run 'cloudstack-cli environment add' to create one."
-        exit 1
-      end
-
-      begin
-        config = YAML::load(IO.read(config_file))
-      rescue
-        puts "Can't load configuration from file #{config_file}."
-        exit 1
-      end
-
-      if env ||= config[:default]
-        unless config = config[env]
-          puts "Can't find environment #{env}."
-          exit 1
-        end
-      end
-
-      unless config.key?(:url) && config.key?(:api_key) && config.key?(:secret_key)
-        puts "The environment #{env || '\'-\''} contains no valid data."
-        exit 1
-      end
-      return config, env
     end
 
   end
