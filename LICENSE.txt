@@ -1,4 +1,4 @@
-Copyright (c) 2015 niwo
+Copyright (c) 2015-2018 niwo
 
 MIT License
 
